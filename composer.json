@@ -1,0 +1,29 @@
+{
+    "name": "nickjbedford/calendar-scheduler",
+    "type": "library",
+    "description": "Provides classes to calculate past and future schedule dates based on a reference date.",
+    "keywords": [
+		"calendar", "scheduling", "schedule"
+	],
+    "homepage": "https://github.com/nickjbedford/calendar-scheduler",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Nick Bedford",
+            "email": "nick@nickbedford.com",
+            "homepage": "https://www.nickjbedford.com",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "YetAnother\\": "src/"
+        }
+    },
+	"require": {
+		"php": ">=7.4"
+	},
+    "require-dev": {
+        "phpunit/phpunit": "*"
+    }
+}

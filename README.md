@@ -17,7 +17,11 @@ $scheduler = new DayCalendarScheduler('2021-01-04', 14);
 // get next 3 dates from 1st February 2021
 $dates = $scheduler->getDates(3, '2021-02-01'); 
 
-// $dates = [ '2021-02-03', '2021-02-17', '2021-03-03' ]
+// $dates = [
+//   '2021-02-03'
+//   '2021-02-17'
+//   '2021-03-03'
+// ]
 ```
 
 Alternatively you can use the provided helper methods to create 
@@ -25,7 +29,14 @@ schedulers:
 
 ```php
 use \YetAnother\DayCalendarScheduler;
+use \YetAnother\MonthCalendarScheduler;
+use \YetAnother\YearCalendarScheduler;
 
-$weekly = DayCalendarScheduler::weekly('2020-01-04');
-$fortnightly = DayCalendarScheduler::fortnightly('2020-01-04');
+$date = '2020-01-04';
+
+$weekly = DayCalendarScheduler::weekly($date);
+$fortnightly = DayCalendarScheduler::fortnightly($date);
+$monthly = MonthCalendarScheduler::monthly($date);
+$biannual = MonthCalendarScheduler::sixMonthly($date);
+$yearly = YearCalendarScheduler::yearly($date);
 ```

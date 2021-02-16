@@ -29,7 +29,7 @@
 		 */
 		public function testIsScheduledMonthlyDate()
 		{
-			$schedule = new DayCalendarScheduler('2020-01-05', 2);
+			$schedule = new MonthCalendarScheduler('2020-01-05', 2);
 			$dates = [
 				'2019-01-05',
 				'2020-01-05',
@@ -48,7 +48,7 @@
 		 */
 		public function testIsScheduledFirstOfMonthlyDate()
 		{
-			$schedule = new DayCalendarScheduler('2020-01-01', 1);
+			$schedule = new MonthCalendarScheduler('2020-01-01', 1);
 			$dates = [
 				'2019-01-01',
 				'2020-01-01',
@@ -67,7 +67,7 @@
 		 */
 		public function testIsNotScheduledMonthlyDate()
 		{
-			$schedule = new DayCalendarScheduler('2020-01-05', 2);
+			$schedule = new MonthCalendarScheduler('2020-01-05', 2);
 			$dates = [
 				'2019-02-05',
 				'2020-04-05',
@@ -93,7 +93,7 @@
 					'2020-06-15' => 2,
 					'2019-12-15' => -1
 				],
-				new DayCalendarScheduler('2020-02-15', 2),
+				new MonthCalendarScheduler('2020-02-15', 2),
 				'2020-02-15');
 		}
 		
@@ -108,7 +108,7 @@
 					'2020-08-15' => 2,
 					'2020-02-15' => -1
 				],
-				new DayCalendarScheduler('2020-02-15', 2),
+				new MonthCalendarScheduler('2020-02-15', 2),
 				'2020-04-15');
 		}
 		
@@ -124,7 +124,7 @@
 					'2020-02-15' => -1,
 					'2019-12-15' => -2
 				],
-				new DayCalendarScheduler('2020-02-15', 2),
+				new MonthCalendarScheduler('2020-02-15', 2),
 				'2020-04-10');
 		}
 		
@@ -139,7 +139,7 @@
 					'2021-08-15' => 2,
 					'2021-02-15' => -1
 				],
-				new DayCalendarScheduler('2020-02-15', 2),
+				new MonthCalendarScheduler('2020-02-15', 2),
 				'2021-03-10');
 		}
 		
@@ -154,7 +154,7 @@
 					'2019-10-15' => 2,
 					'2019-01-15' => -1
 				],
-				new DayCalendarScheduler('2020-01-15', 3),
+				new MonthCalendarScheduler('2020-01-15', 3),
 				'2019-01-16');
 		}
 	}

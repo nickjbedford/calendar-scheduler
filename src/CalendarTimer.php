@@ -1,4 +1,6 @@
 <?php
+	/** @noinspection PhpUnused */
+	
 	namespace YetAnother;
 	
 	use DateInterval;
@@ -12,7 +14,7 @@
 	 * reference date.
 	 * @package YetAnother
 	 */
-	abstract class CalendarScheduler
+	abstract class CalendarTimer
 	{
 		private string $intervalName;
 		private DateTime $referenceDate;
@@ -86,6 +88,7 @@
 		protected abstract function calculateIntervalsUntilNext(DateInterval $difference): int;
 		
 		/**
+		 * Calculates a series of schedule dates
 		 * @param int $count The number of dates to calculate.
 		 * @param string|null $from The date to calculate from, otherwise today's date.
 		 * @return array
@@ -98,7 +101,7 @@
 		}
 		
 		/**
-		 * Determines if a date is on the a schedule date.
+		 * Determines if a date falls on the scheduled date.
 		 * @param string $date
 		 * @return bool
 		 * @throws Exception
@@ -106,5 +109,71 @@
 		public function isScheduleDate(string $date): bool
 		{
 			return $this->getNextDate(0, $date) == $date;
+		}
+		
+		/**
+		 * Creates a weekly scheduler.
+		 * @param string $fromDate
+		 * @return self
+		 * @throws Exception
+		 */
+		public static function weekly(string $fromDate): self
+		{
+			return new DayTimer($fromDate, 7);
+		}
+		
+		/**
+		 * Creates a fortnightly scheduler.
+		 * @param string $fromDate
+		 * @return self
+		 * @throws Exception
+		 */
+		public static function fortnightly(string $fromDate): self
+		{
+			return new DayTimer($fromDate, 14);
+		}
+		
+		/**
+		 * Creates a monthly scheduler.
+		 * @param string $referenceDate
+		 * @return self
+		 * @throws Exception
+		 */
+		public static function monthly(string $referenceDate): self
+		{
+			return new MonthTimer($referenceDate, 1);
+		}
+		
+		/**
+		 * Creates a six-monthly scheduler.
+		 * @param string $referenceDate
+		 * @return self
+		 * @throws Exception
+		 */
+		public static function sixMonthly(string $referenceDate): self
+		{
+			return new MonthTimer($referenceDate, 1);
+		}
+		
+		/**
+		 * Creates a yearly scheduler.
+		 * @param string $referenceDate
+		 * @return self
+		 * @throws Exception
+		 */
+		public static function yearly(string $referenceDate): self
+		{
+			return new YearTimer($referenceDate, 1);
+		}
+		
+		/**
+		 * Creates a 10-yearly scheduler.
+		 * @param string $referenceDate
+		 * @return self
+		 * @throws Exception
+		 */
+		public static function perDecade(string $referenceDate): self
+		{
+			return new YearTimer($referenceDate, 10);
 		}
 	}

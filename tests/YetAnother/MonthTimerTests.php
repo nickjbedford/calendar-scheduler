@@ -4,17 +4,17 @@
 	use Exception;
 	use PHPUnit\Framework\TestCase;
 	
-	class MonthSchedulerTests extends TestCase
+	class MonthTimerTests extends TestCase
 	{
 		/**
 		 * @param array $expectedDatesForOffsets
-		 * @param CalendarScheduler $schedule
+		 * @param CalendarTimer $schedule
 		 * @param string $today
 		 * @throws Exception
 		 */
-		private function runScheduleTest(
+		private function runTimerTest(
 			array $expectedDatesForOffsets,
-			CalendarScheduler $schedule,
+			CalendarTimer $schedule,
 			string $today)
 		{
 			foreach($expectedDatesForOffsets as $expected=>$offset)
@@ -29,7 +29,7 @@
 		 */
 		public function testIsScheduledMonthlyDate()
 		{
-			$schedule = new MonthCalendarScheduler('2020-01-05', 2);
+			$schedule = new MonthTimer('2020-01-05', 2);
 			$dates = [
 				'2019-01-05',
 				'2020-01-05',
@@ -48,7 +48,7 @@
 		 */
 		public function testIsScheduledFirstOfMonthlyDate()
 		{
-			$schedule = new MonthCalendarScheduler('2020-01-01', 1);
+			$schedule = new MonthTimer('2020-01-01', 1);
 			$dates = [
 				'2019-01-01',
 				'2020-01-01',
@@ -67,7 +67,7 @@
 		 */
 		public function testIsNotScheduledMonthlyDate()
 		{
-			$schedule = new MonthCalendarScheduler('2020-01-05', 2);
+			$schedule = new MonthTimer('2020-01-05', 2);
 			$dates = [
 				'2019-02-05',
 				'2020-04-05',
@@ -87,13 +87,13 @@
 		 */
 		public function testMonthlyDateScheduleFromSameDate()
 		{
-			$this->runScheduleTest([
+			$this->runTimerTest([
 					'2020-02-15' => 0,
 					'2020-04-15' => 1,
 					'2020-06-15' => 2,
 					'2019-12-15' => -1
 				],
-				new MonthCalendarScheduler('2020-02-15', 2),
+				new MonthTimer('2020-02-15', 2),
 				'2020-02-15');
 		}
 		
@@ -102,13 +102,13 @@
 		 */
 		public function testMonthlyDateScheduleFromDifferentScheduleDate()
 		{
-			$this->runScheduleTest([
+			$this->runTimerTest([
 					'2020-04-15' => 0,
 					'2020-06-15' => 1,
 					'2020-08-15' => 2,
 					'2020-02-15' => -1
 				],
-				new MonthCalendarScheduler('2020-02-15', 2),
+				new MonthTimer('2020-02-15', 2),
 				'2020-04-15');
 		}
 		
@@ -117,14 +117,14 @@
 		 */
 		public function testMonthlyDateScheduleFromIntermediateDate()
 		{
-			$this->runScheduleTest([
+			$this->runTimerTest([
 					'2020-04-15' => 0,
 					'2020-06-15' => 1,
 					'2020-08-15' => 2,
 					'2020-02-15' => -1,
 					'2019-12-15' => -2
 				],
-				new MonthCalendarScheduler('2020-02-15', 2),
+				new MonthTimer('2020-02-15', 2),
 				'2020-04-10');
 		}
 		
@@ -133,13 +133,13 @@
 		 */
 		public function testMonthlyDateScheduleFromFarIntermediateDate()
 		{
-			$this->runScheduleTest([
+			$this->runTimerTest([
 					'2021-04-15' => 0,
 					'2021-06-15' => 1,
 					'2021-08-15' => 2,
 					'2021-02-15' => -1
 				],
-				new MonthCalendarScheduler('2020-02-15', 2),
+				new MonthTimer('2020-02-15', 2),
 				'2021-03-10');
 		}
 		
@@ -148,13 +148,13 @@
 		 */
 		public function testMonthlyDateScheduleFromPastIntermediateDate()
 		{
-			$this->runScheduleTest([
+			$this->runTimerTest([
 					'2019-04-15' => 0,
 					'2019-07-15' => 1,
 					'2019-10-15' => 2,
 					'2019-01-15' => -1
 				],
-				new MonthCalendarScheduler('2020-01-15', 3),
+				new MonthTimer('2020-01-15', 3),
 				'2019-01-16');
 		}
 	}

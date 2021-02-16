@@ -4,17 +4,17 @@
 	use Exception;
 	use PHPUnit\Framework\TestCase;
 	
-	class DaySchedulerTests extends TestCase
+	class DayTimerTests extends TestCase
 	{
 		/**
 		 * @param array $expectedDatesForOffsets
-		 * @param CalendarScheduler $schedule
+		 * @param CalendarTimer $schedule
 		 * @param string $today
 		 * @throws Exception
 		 */
-		private function runScheduleTest(
+		private function runTimerTest(
 			array $expectedDatesForOffsets,
-			CalendarScheduler $schedule,
+			CalendarTimer $schedule,
 			string $today)
 		{
 			foreach($expectedDatesForOffsets as $expected=>$offset)
@@ -29,7 +29,7 @@
 		 */
 		public function testIsScheduledDailyDate()
 		{
-			$schedule = new DayCalendarScheduler('2020-01-05', 5);
+			$schedule = new DayTimer('2020-01-05', 5);
 			$dates = [
 				'2019-12-01',
 				'2019-12-26',
@@ -48,7 +48,7 @@
 		 */
 		public function testIsNotScheduledDailyDate()
 		{
-			$schedule = new DayCalendarScheduler('2020-01-05', 5);
+			$schedule = new DayTimer('2020-01-05', 5);
 			$dates = [
 				'2019-12-02',
 				'2019-12-23',
@@ -66,13 +66,13 @@
 		 */
 		public function testDailyDateScheduleFromSameDate()
 		{
-			$this->runScheduleTest([
+			$this->runTimerTest([
 					'2020-02-15' => 0,
 					'2020-02-20' => 1,
 					'2020-02-25' => 2,
 					'2020-02-10' => -1
 				],
-				new DayCalendarScheduler('2020-02-15', 5),
+				new DayTimer('2020-02-15', 5),
 				'2020-02-15');
 		}
 		
@@ -81,13 +81,13 @@
 		 */
 		public function testDailyDateScheduleFromDifferentScheduleDate()
 		{
-			$this->runScheduleTest([
+			$this->runTimerTest([
 					'2020-02-20' => 0,
 					'2020-02-25' => 1,
 					'2020-03-01' => 2,
 					'2020-02-15' => -1
 				],
-				new DayCalendarScheduler('2020-02-15', 5),
+				new DayTimer('2020-02-15', 5),
 				'2020-02-20');
 		}
 		
@@ -96,13 +96,13 @@
 		 */
 		public function testDailyDateScheduleFromIntermediateDate()
 		{
-			$this->runScheduleTest([
+			$this->runTimerTest([
 					'2020-02-20' => 0,
 					'2020-02-25' => 1,
 					'2020-03-01' => 2,
 					'2020-02-15' => -1
 				],
-				new DayCalendarScheduler('2020-02-15', 5),
+				new DayTimer('2020-02-15', 5),
 				'2020-02-17');
 		}
 		
@@ -111,14 +111,14 @@
 		 */
 		public function testDailyDateScheduleFromPastIntermediateDate()
 		{
-			$this->runScheduleTest([
+			$this->runTimerTest([
 					'2020-02-05' => 0,
 					'2020-02-10' => 1,
 					'2020-02-15' => 2,
 					'2020-01-31' => -1,
 					'2020-01-26' => -2
 				],
-				new DayCalendarScheduler('2020-02-25', 5),
+				new DayTimer('2020-02-25', 5),
 				'2020-02-01');
 		}
 	}

@@ -4,17 +4,17 @@
 	use Exception;
 	use PHPUnit\Framework\TestCase;
 	
-	class YearSchedulerTests extends TestCase
+	class YearTimerTests extends TestCase
 	{
 		/**
 		 * @param array $expectedDatesForOffsets
-		 * @param CalendarScheduler $schedule
+		 * @param CalendarTimer $schedule
 		 * @param string $today
 		 * @throws Exception
 		 */
-		private function runScheduleTest(
+		private function runTimerTest(
 			array $expectedDatesForOffsets,
-			CalendarScheduler $schedule,
+			CalendarTimer $schedule,
 			string $today)
 		{
 			foreach($expectedDatesForOffsets as $expected=>$offset)
@@ -29,7 +29,7 @@
 		 */
 		public function testIsScheduledYearlyDate()
 		{
-			$schedule = new YearCalendarScheduler('2020-01-05', 2);
+			$schedule = new YearTimer('2020-01-05', 2);
 			$dates = [
 				'2018-01-05',
 				'2020-01-05',
@@ -46,7 +46,7 @@
 		 */
 		public function testIsNotScheduledYearlyDate()
 		{
-			$schedule = new YearCalendarScheduler('2020-01-05', 2);
+			$schedule = new YearTimer('2020-01-05', 2);
 			$dates = [
 				'2019-01-05',
 				'2021-01-05',
@@ -64,13 +64,13 @@
 		 */
 		public function testYearlyDateScheduleFromSameDate()
 		{
-			$this->runScheduleTest([
+			$this->runTimerTest([
 					'2020-02-15' => 0,
 					'2022-02-15' => 1,
 					'2024-02-15' => 2,
 					'2018-02-15' => -1
 				],
-				new YearCalendarScheduler('2020-02-15', 2),
+				new YearTimer('2020-02-15', 2),
 				'2020-02-15');
 		}
 		
@@ -79,13 +79,13 @@
 		 */
 		public function testYearlyDateScheduleFromDifferentScheduleDate()
 		{
-			$this->runScheduleTest([
+			$this->runTimerTest([
 					'2022-02-15' => 0,
 					'2024-02-15' => 1,
 					'2026-02-15' => 2,
 					'2020-02-15' => -1
 				],
-				new YearCalendarScheduler('2020-02-15', 2),
+				new YearTimer('2020-02-15', 2),
 				'2020-04-15');
 		}
 		
@@ -94,13 +94,13 @@
 		 */
 		public function testYearlyDateScheduleFromIntermediateDate()
 		{
-			$this->runScheduleTest([
+			$this->runTimerTest([
 					'2022-02-15' => 0,
 					'2024-02-15' => 1,
 					'2026-02-15' => 2,
 					'2020-02-15' => -1
 				],
-				new YearCalendarScheduler('2020-02-15', 2),
+				new YearTimer('2020-02-15', 2),
 				'2020-04-10');
 		}
 		
@@ -109,13 +109,13 @@
 		 */
 		public function testYearlyDateScheduleFromPastIntermediateDate()
 		{
-			$this->runScheduleTest([
+			$this->runTimerTest([
 					'2018-02-15' => 0,
 					'2020-02-15' => 1,
 					'2022-02-15' => 2,
 					'2016-02-15' => -1
 				],
-				new YearCalendarScheduler('2020-02-15', 2),
+				new YearTimer('2020-02-15', 2),
 				'2016-04-10');
 		}
 	}

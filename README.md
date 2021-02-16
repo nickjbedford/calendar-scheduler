@@ -1,7 +1,7 @@
-# CalendarScheduler (Yet Another)
+# CalendarTimer (Yet Another)
 
 Provides day, month and year-based calendar schedule
-calculation. For each type of scheduler, a reference
+calculation. For each type of timer, a reference
 date along with an interval is used to calculate past
 and future dates, from any date including now.
 
@@ -10,9 +10,9 @@ from Wednesday 6th January 2021, you can use the following
 code:
 
 ```php
-use \YetAnother\DayCalendarScheduler;
+use \YetAnother\DayTimer;
 
-$scheduler = new DayCalendarScheduler('2021-01-04', 14);
+$scheduler = new DayTimer('2021-01-04', 14);
 
 // get next 3 dates from 1st February 2021
 $dates = $scheduler->getDates(3, '2021-02-01'); 
@@ -25,18 +25,17 @@ $dates = $scheduler->getDates(3, '2021-02-01');
 ```
 
 Alternatively you can use the provided helper methods to create 
-schedulers:
+calendar timer. These create instances of the `DayTimer`, `MonthTimer`
+or `YearTimer` subclasses depending on the helper.
 
 ```php
-use \YetAnother\DayCalendarScheduler;
-use \YetAnother\MonthCalendarScheduler;
-use \YetAnother\YearCalendarScheduler;
+use \YetAnother\CalendarTimer;
 
 $date = '2020-01-04';
 
-$weekly = DayCalendarScheduler::weekly($date);
-$fortnightly = DayCalendarScheduler::fortnightly($date);
-$monthly = MonthCalendarScheduler::monthly($date);
-$biannual = MonthCalendarScheduler::sixMonthly($date);
-$yearly = YearCalendarScheduler::yearly($date);
+$weekly = CalendarTimer::weekly($date);
+$fortnightly = CalendarTimer::fortnightly($date);
+$monthly = CalendarTimer::monthly($date);
+$biannual = CalendarTimer::sixMonthly($date);
+$yearly = CalendarTimer::yearly($date);
 ```

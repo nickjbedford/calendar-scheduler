@@ -1,4 +1,6 @@
 <?php
+	/** @noinspection PhpUnused */
+	
 	namespace YetAnother;
 	
 	use DateInterval;
@@ -10,7 +12,7 @@
 	 * dates based on a reference date.
 	 * @package YetAnother
 	 */
-	class MonthCalendarScheduler extends CalendarScheduler
+	class MonthTimer extends CalendarTimer
 	{
 		/**
 		 * Initialises a new month-based scheduler.
@@ -21,39 +23,6 @@
 		public function __construct(string $referenceDate, int $interval = 1)
 		{
 			parent::__construct($referenceDate, $interval, 'months');
-		}
-		
-		/**
-		 * Creates a monthly scheduler.
-		 * @param string $referenceDate
-		 * @return static
-		 * @throws Exception
-		 */
-		public static function monthly(string $referenceDate): self
-		{
-			return new self($referenceDate, 1);
-		}
-		
-		/**
-		 * Creates a six-monthly scheduler.
-		 * @param string $referenceDate
-		 * @return static
-		 * @throws Exception
-		 */
-		public static function sixMonthly(string $referenceDate): self
-		{
-			return new self($referenceDate, 1);
-		}
-		
-		/**
-		 * Creates a six-monthly scheduler.
-		 * @param string $referenceDate
-		 * @return static
-		 * @throws Exception
-		 */
-		public static function yearly(string $referenceDate): self
-		{
-			return new self($referenceDate, 12);
 		}
 		
 		/**

@@ -1,11 +1,11 @@
 {
-    "name": "nickjbedford/calendar-scheduler",
+    "name": "nickjbedford/calendar-timer",
     "type": "library",
     "description": "Provides classes to calculate past and future schedule dates based on a reference date.",
     "keywords": [
-		"calendar", "scheduling", "schedule"
+		"calendar", "scheduling", "schedule", "timer"
 	],
-    "homepage": "https://github.com/nickjbedford/calendar-scheduler",
+    "homepage": "https://github.com/nickjbedford/calendar-timer",
     "license": "MIT",
     "authors": [
         {

@@ -1,4 +1,6 @@
 <?php
+	/** @noinspection PhpUnused */
+	
 	namespace YetAnother;
 	
 	use DateInterval;
@@ -10,7 +12,7 @@
 	 * dates based on a reference date.
 	 * @package YetAnother
 	 */
-	class YearCalendarScheduler extends CalendarScheduler
+	class YearTimer extends CalendarTimer
 	{
 		/**
 		 * Initialises a new year-based scheduler.
@@ -21,28 +23,6 @@
 		public function __construct(string $referenceDate, int $interval = 1)
 		{
 			parent::__construct($referenceDate, $interval, 'years');
-		}
-		
-		/**
-		 * Creates a yearly scheduler.
-		 * @param string $referenceDate
-		 * @return static
-		 * @throws Exception
-		 */
-		public static function yearly(string $referenceDate): self
-		{
-			return new self($referenceDate, 1);
-		}
-		
-		/**
-		 * Creates a 10-yearly scheduler.
-		 * @param string $referenceDate
-		 * @return static
-		 * @throws Exception
-		 */
-		public static function perDecade(string $referenceDate): self
-		{
-			return new self($referenceDate, 10);
 		}
 		
 		/**

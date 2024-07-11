@@ -122,7 +122,7 @@
 			$from->setTime(0, 0);
 			$notBefore = $from->timestamp;
 			
-			if (!in_array($from->dayOfMonth, $this->calendarAvailability[$from->month]))
+			if (!in_array($from->day, $this->calendarAvailability[$from->month]))
 				$this->moveToNextCalendarDate($from);
 			
 			$i = self::$loopLimit;
@@ -183,7 +183,7 @@
 		
 		private function moveToNextCalendarDate(Carbon $from): void
 		{
-			while (!in_array($from->dayOfMonth, $this->calendarAvailability[$from->month]))
+			while (!in_array($from->day, $this->calendarAvailability[$from->month]))
 				$from = $from->addDay();
 		}
 	}

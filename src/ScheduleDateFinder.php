@@ -122,6 +122,9 @@
 			$from->setTime(0, 0);
 			$notBefore = $from->timestamp;
 			
+			if (!in_array($from->dayOfMonth, $this->calendarAvailability[$from->month]))
+				$this->moveToNextCalendarDate($from);
+			
 			$i = self::$loopLimit;
 			while ($i--)
 			{
@@ -145,7 +148,7 @@
 						} while(!in_array($from->dayOfWeek, $this->workdays));
 						continue 2;
 						
-					case DayOfMonthScheduleMethod::PreviousWorkdayIfAvailable:
+					case DayOfMonthScheduleMethod::ClosestWorkday:
 						$before = $from->timestamp;
 						do
 						{
@@ -159,9 +162,15 @@
 						if ($from->timestamp < $notBefore)
 						{
 							$from->setTimestamp($before);
-							$from->addDay();
-							$notBefore = $from->timestamp;
-							break;
+							do
+							{
+								$from->addDay();
+								
+								$isHoliday = in_array($from->format('Y-m-d'), $this->holidays, true);
+								$isWorkday = in_array($from->dayOfWeek, $this->workdays);
+							}
+							while ($isHoliday || !$isWorkday);
+							return $from;
 						}
 						
 						return $from;

@@ -5,6 +5,7 @@
 	use Carbon\CarbonInterface;
 	use Carbon\Exceptions\InvalidFormatException;
 	use DateTimeInterface;
+	use Exception;
 	
 	/**
 	 * Finds the next scheduled date based on a reference date and a set of
@@ -68,8 +69,16 @@
 			CarbonInterface::NOVEMBER => self::EveryDay,
 			CarbonInterface::DECEMBER => self::EveryDay
 		];
-		
+		/**
+		 * @var array|string[] The public holidays to exclude from the schedule (formatted 'YYYY-MM-DD').
+		 */
 		public readonly array $holidays;
+		
+		/**
+		 * @var Weekday[] $preferredWorkdays The preferred working days of the week to include in the schedule.
+		 */
+		public readonly array $preferredWorkdays;
+		
 		
 		/**
 		 * Creates a calendar availability table for each month of the year with the same day-of-month dates.
@@ -86,17 +95,30 @@
 		}
 		
 		/**
-		 * @param Weekday[] $workdays The working days of the week to include in the schedule.
+		 * @param Weekday[] $workdays The working days of the week to allow in the schedule.
+		 * @param Weekday[]|null $preferredWorkdays The preferred working days of the week to use when finding the
+		 * next preferred date in the schedule (defaults to $workdays). This is used first then $workdays is used
+		 * when the first preferred date is unavailable.
 		 * @param string[]|null $holidays The public holidays to exclude from the schedule (these must be in the format "YYYY-MM-DD").
-		 * @param array $calendarAvailability The calendar days of each month of the year to make available in the schedule.
+		 * @param array $availabilityCalendar The calendar days of each month of the year to make available in the schedule.
 		 * @param DayOfMonthScheduleMethod $dayOfMonthScheduleMethod
+		 * @throws Exception Thrown when no workdays are specified.
 		 */
-		public function __construct(public readonly array           $workdays = Weekday::Weekdays,
-		                            ?array                          $holidays = null,
-		                            public readonly array           $calendarAvailability = self::AllYear,
-		                            public DayOfMonthScheduleMethod $dayOfMonthScheduleMethod = DayOfMonthScheduleMethod::NextWorkday)
+		public function __construct(
+			public readonly array           $workdays = Weekday::Weekdays,
+			?array                          $preferredWorkdays = null,
+			public readonly array           $availabilityCalendar = self::AllYear,
+			?array                          $holidays = null,
+			public DayOfMonthScheduleMethod $dayOfMonthScheduleMethod = DayOfMonthScheduleMethod::NextWorkday)
 		{
 			$this->holidays = $holidays ?? self::$defaultHolidays;
+			$this->preferredWorkdays = $preferredWorkdays ?? $workdays;
+			
+			if (empty($this->workdays))
+				throw new Exception('At least one workday must be specified.');
+			
+			if (empty($this->preferredWorkdays))
+				throw new Exception('At least one preferred workday must be specified.');
 		}
 		
 		/**
@@ -135,7 +157,7 @@
 			$notBefore->setTime(0, 0);
 			$notBefore = $notBefore->timestamp;
 			
-			if (!in_array($from->day, $this->calendarAvailability[$from->month]))
+			if (!in_array($from->day, $this->availabilityCalendar[$from->month]))
 				$this->moveToNextCalendarDate($from);
 			
 			$i = self::$loopLimit;
@@ -143,14 +165,14 @@
 			{
 				$date = $from->format('Y-m-d');
 				$isHoliday = in_array($date, $this->holidays, true);
-				$isWorkday = in_array($from->dayOfWeek, $this->workdays);
+				$isPreferredWorkday = in_array($from->dayOfWeek, $this->preferredWorkdays);
 				
-				if (!$isHoliday && $isWorkday)
+				if (!$isHoliday && $isPreferredWorkday)
 					return $from;
 				
 				switch($this->dayOfMonthScheduleMethod)
 				{
-					case DayOfMonthScheduleMethod::NextAvailableDate:
+					case DayOfMonthScheduleMethod::NextPreferredDate:
 						$from->addDay();
 						break;
 						
@@ -168,9 +190,9 @@
 							$from->subDay();
 							
 							$isHoliday = in_array($from->format('Y-m-d'), $this->holidays, true);
-							$isWorkday = in_array($from->dayOfWeek, $this->workdays);
+							$isPreferredWorkday = in_array($from->dayOfWeek, $this->workdays);
 						}
-						while ($notBefore <= $from->timestamp && ($isHoliday || !$isWorkday));
+						while ($notBefore <= $from->timestamp && ($isHoliday || !$isPreferredWorkday));
 						
 						if ($from->timestamp < $notBefore)
 						{
@@ -196,7 +218,7 @@
 		
 		private function moveToNextCalendarDate(Carbon $from): void
 		{
-			while (!in_array($from->day, $this->calendarAvailability[$from->month]))
+			while (!in_array($from->day, $this->availabilityCalendar[$from->month]))
 				$from = $from->addDay();
 		}
 	}

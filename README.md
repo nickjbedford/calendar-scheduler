@@ -62,7 +62,7 @@ use YetAnother\DayOfMonthScheduleMethod;
 $schedule = new ScheduleDateFinder(
     workdays: [ Weekday::Monday, Weekday::Wednesday, Weekday::Friday ],
     holidays: [ '2024-06-17' ],
-    calendarAvailability: ScheduleDateFinder::createAvailabilityCalendar([ 5, 15, 25 ]),
+    availabilityCalendar: ScheduleDateFinder::createAvailabilityCalendar([ 5, 15, 25 ]),
     dayOfMonthScheduleMethod: DayOfMonthScheduleMethod::ClosestWorkday);
 
 /**

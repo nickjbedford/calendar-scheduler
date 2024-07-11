@@ -1,6 +1,7 @@
 <?php
 	namespace YetAnother;
 	
+	use Exception;
 	use PHPUnit\Framework\TestCase;
 	
 	class ScheduleDateFinderTests extends TestCase
@@ -11,10 +12,13 @@
 			ScheduleDateFinder::$defaultHolidays = [];
 		}
 		
+		/**
+		 * @throws Exception
+		 */
 		function testEveryCalendarDayAndWeekdaysFindsDate()
 		{
 			/** @var DayOfMonthScheduleMethod $method */
-			foreach([ DayOfMonthScheduleMethod::NextAvailableDate, DayOfMonthScheduleMethod::NextWorkday ] as $method)
+			foreach([ DayOfMonthScheduleMethod::NextPreferredDate, DayOfMonthScheduleMethod::NextWorkday ] as $method)
 			{
 				$schedule = new ScheduleDateFinder(
 					Weekday::Weekdays,
@@ -34,7 +38,7 @@
 				
 				$schedule = new ScheduleDateFinder(
 					Weekday::Weekdays,
-					[ '2024-07-03' ],
+					holidays: [ '2024-07-03' ],
 					dayOfMonthScheduleMethod: $method);
 				
 				foreach([
@@ -51,9 +55,12 @@
 			}
 		}
 		
+		/**
+		 * @throws Exception
+		 */
 		function testEveryCalendarDayAndSelectWeekdaysFindsDate()
 		{
-			foreach([ DayOfMonthScheduleMethod::NextAvailableDate, DayOfMonthScheduleMethod::NextWorkday ] as $method)
+			foreach([ DayOfMonthScheduleMethod::NextPreferredDate, DayOfMonthScheduleMethod::NextWorkday ] as $method)
 			{
 				$schedule = new ScheduleDateFinder(
 					Weekday::MondayWednesdayFriday,
@@ -73,7 +80,7 @@
 				
 				$schedule = new ScheduleDateFinder(
 					Weekday::MondayWednesdayFriday,
-					[
+					holidays: [
 						'2024-07-03',
 						'2024-07-08',
 					],
@@ -93,9 +100,12 @@
 			}
 		}
 		
+		/**
+		 * @throws Exception
+		 */
 		function testEveryCalendarDayAndMondayFindsDate()
 		{
-			foreach([ DayOfMonthScheduleMethod::NextAvailableDate, DayOfMonthScheduleMethod::NextWorkday ] as $method)
+			foreach([ DayOfMonthScheduleMethod::NextPreferredDate, DayOfMonthScheduleMethod::NextWorkday ] as $method)
 			{
 				$schedule = new ScheduleDateFinder(
 					[ Weekday::Monday ],
@@ -116,10 +126,13 @@
 			}
 		}
 		
+		/**
+		 * @throws Exception
+		 */
 		function testSpecificCalendarDaysFindsNextDate()
 		{
 			$schedule = new ScheduleDateFinder(
-				calendarAvailability: ScheduleDateFinder::createAvailabilityCalendar([ 5, 15, 25 ]));
+				availabilityCalendar: ScheduleDateFinder::createAvailabilityCalendar([ 5, 15, 25 ]));
 			
 				foreach([
 					'2024-07-05' => [
@@ -165,10 +178,13 @@
 				}
 		}
 		
+		/**
+		 * @throws Exception
+		 */
 		function testSpecificCalendarDaysInAugustFindsNextDate()
 		{
 			$schedule = new ScheduleDateFinder(
-				calendarAvailability: ScheduleDateFinder::createAvailabilityCalendar([ 5, 15, 25 ]));
+				availabilityCalendar: ScheduleDateFinder::createAvailabilityCalendar([ 5, 15, 25 ]));
 			
 				foreach([
 					'2024-08-05' => [
@@ -214,11 +230,14 @@
 				}
 		}
 		
+		/**
+		 * @throws Exception
+		 */
 		function testSpecificCalendarDaysInAugustFindsPreviousDate()
 		{
 			$schedule = new ScheduleDateFinder(
-				[ Weekday::Monday, Weekday::Tuesday, Weekday::Wednesday ],
-				calendarAvailability: ScheduleDateFinder::createAvailabilityCalendar([ 7, 15, 25 ]),
+				                          [ Weekday::Monday, Weekday::Tuesday, Weekday::Wednesday ],
+				availabilityCalendar:     ScheduleDateFinder::createAvailabilityCalendar([ 7, 15, 25 ]),
 				dayOfMonthScheduleMethod: DayOfMonthScheduleMethod::ClosestWorkday);
 			
 				foreach([
@@ -269,11 +288,14 @@
 				}
 		}
 		
+		/**
+		 * @throws Exception
+		 */
 		function testSpecificCalendarDaysInAugustFindsPreviousDateWithEarlierNotBefore()
 		{
 			$schedule = new ScheduleDateFinder(
-				[ Weekday::Monday, Weekday::Wednesday ],
-				calendarAvailability: ScheduleDateFinder::createAvailabilityCalendar([ 7, 15, 25 ]),
+				                          [ Weekday::Monday, Weekday::Wednesday ],
+				availabilityCalendar:     ScheduleDateFinder::createAvailabilityCalendar([ 7, 15, 25 ]),
 				dayOfMonthScheduleMethod: DayOfMonthScheduleMethod::ClosestWorkday);
 			
 				foreach([
@@ -300,12 +322,15 @@
 				}
 		}
 		
+		/**
+		 * @throws Exception
+		 */
 		function testSpecificClosestWorkdayScheduleWorks()
 		{
 			$schedule = new ScheduleDateFinder(
 				workdays:                 [Weekday::Monday, Weekday::Wednesday, Weekday::Friday],
+				availabilityCalendar:     ScheduleDateFinder::createAvailabilityCalendar([5, 15, 25]),
 				holidays:                 ['2024-06-17'],
-				calendarAvailability:     ScheduleDateFinder::createAvailabilityCalendar([5, 15, 25]),
 				dayOfMonthScheduleMethod: DayOfMonthScheduleMethod::ClosestWorkday);
 			
 			/**

@@ -13,12 +13,12 @@
 		 * the previous availble workday on or after the reference date is chosen,
 		 * otherwise the next available workday on or after the unavailable date.
 		 */
-		case PreviousAvailableWorkday;
+		case PreviousWorkdayIfAvailable;
 		
 		/**
 		 * If the next calendar date falls on an unavailable date,
 		 * the next available work day will be chosen.
 		 */
-		case NextAvailableWorkday;
+		case NextWorkday;
 		case NextAvailableDate;
 	}

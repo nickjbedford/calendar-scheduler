@@ -7,21 +7,27 @@
 	/**
 	 * Represents the ordinals of the days of the week.
 	 */
-	enum Weekday: int
+	class Weekday
 	{
-		case Sunday = CarbonInterface::SUNDAY;
-		case Monday = CarbonInterface::MONDAY;
-		case Tuesday = CarbonInterface::TUESDAY;
-		case Wednesday = CarbonInterface::WEDNESDAY;
-		case Thursday = CarbonInterface::THURSDAY;
-		case Friday = CarbonInterface::FRIDAY;
-		case Saturday = CarbonInterface::SATURDAY;
+		const int Sunday = CarbonInterface::SUNDAY;
+		const int Monday = CarbonInterface::MONDAY;
+		const int Tuesday = CarbonInterface::TUESDAY;
+		const int Wednesday = CarbonInterface::WEDNESDAY;
+		const int Thursday = CarbonInterface::THURSDAY;
+		const int Friday = CarbonInterface::FRIDAY;
+		const int Saturday = CarbonInterface::SATURDAY;
 		
 		const array Weekdays = [
 			Weekday::Monday,
 			Weekday::Tuesday,
 			Weekday::Wednesday,
 			Weekday::Thursday,
+			Weekday::Friday
+		];
+		
+		const array MondayWednesdayFriday = [
+			Weekday::Monday,
+			Weekday::Wednesday,
 			Weekday::Friday
 		];
 		

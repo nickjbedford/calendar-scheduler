@@ -31,7 +31,7 @@
 		/**
 		 * @var int The maximum number of iterations to prevent infinite loops.
 		 */
-		static int $loopLimit = 1000;
+		static int $loopLimit = 10000;
 		
 		const array EveryMonth = [
 			CarbonInterface::JANUARY,
@@ -94,9 +94,20 @@
 		public function __construct(public readonly array           $workdays = Weekday::Weekdays,
 		                            ?array                          $holidays = null,
 		                            public readonly array           $calendarAvailability = self::AllYear,
-		                            public DayOfMonthScheduleMethod $dayOfMonthScheduleMethod = DayOfMonthScheduleMethod::NextAvailableWorkday)
+		                            public DayOfMonthScheduleMethod $dayOfMonthScheduleMethod = DayOfMonthScheduleMethod::NextWorkday)
 		{
 			$this->holidays = $holidays ?? self::$defaultHolidays;
+		}
+		
+		/**
+		 * Finds the next scheduled date based on the reference date, returning a string representation.
+		 * @param string|int|Carbon|DateTimeInterface|null $from The reference date to calculate from (inclusive).
+		 * @return Carbon
+		 * @throws InvalidFormatException
+		 */
+		public function nextAsString(string|int|Carbon|DateTimeInterface|null $from = null): string
+		{
+			return $this->next($from)->format('Y-m-d');
 		}
 		
 		/**
@@ -109,36 +120,55 @@
 		{
 			$from = Carbon::parse($from);
 			$from->setTime(0, 0);
+			$notBefore = $from->timestamp;
 			
 			$i = self::$loopLimit;
-			while($i--)
+			while ($i--)
 			{
-				$this->moveToNextCalendarDate($from);
-				
 				$date = $from->format('Y-m-d');
-				if (in_array($date, $this->holidays, true) || !in_array($from->dayOfWeek, $this->workdays))
+				$isHoliday = in_array($date, $this->holidays, true);
+				$isWorkday = in_array($from->dayOfWeek, $this->workdays);
+				
+				if (!$isHoliday && $isWorkday)
+					return $from;
+				
+				switch($this->dayOfMonthScheduleMethod)
 				{
-					switch($this->dayOfMonthScheduleMethod)
-					{
-						case DayOfMonthScheduleMethod::NextAvailableDate:
+					case DayOfMonthScheduleMethod::NextAvailableDate:
+						$from->addDay();
+						break;
+						
+					case DayOfMonthScheduleMethod::NextWorkday:
+						do
+						{
 							$from->addDay();
-							break;
+						} while(!in_array($from->dayOfWeek, $this->workdays));
+						continue 2;
+						
+					case DayOfMonthScheduleMethod::PreviousWorkdayIfAvailable:
+						$before = $from->timestamp;
+						do
+						{
+							$from->subDay();
 							
-						case DayOfMonthScheduleMethod::NextAvailableWorkday:
-							while (!in_array($from->dayOfWeek, $this->workdays))
-								$from->addDay();
+							$isHoliday = in_array($from->format('Y-m-d'), $this->holidays, true);
+							$isWorkday = in_array($from->dayOfWeek, $this->workdays);
+						}
+						while ($notBefore <= $from->timestamp && ($isHoliday || !$isWorkday));
+						
+						if ($from->timestamp < $notBefore)
+						{
+							$from->setTimestamp($before);
+							$from->addDay();
+							$notBefore = $from->timestamp;
 							break;
-							
-						case DayOfMonthScheduleMethod::PreviousAvailableWorkday:
-							
-							break;
-					}
-					continue;
+						}
+						
+						return $from;
 				}
 				
-				break;
+				$this->moveToNextCalendarDate($from);
 			}
-			
 			return $from;
 		}
 		

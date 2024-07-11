@@ -268,4 +268,35 @@
 						$this->assertEquals($expected, $schedule->nextAsString($from), $from);
 				}
 		}
+		
+		function testSpecificCalendarDaysInAugustFindsPreviousDateWithEarlierNotBefore()
+		{
+			$schedule = new ScheduleDateFinder(
+				[ Weekday::Monday, Weekday::Wednesday ],
+				calendarAvailability: ScheduleDateFinder::createAvailabilityCalendar([ 7, 15, 25 ]),
+				dayOfMonthScheduleMethod: DayOfMonthScheduleMethod::ClosestWorkday);
+			
+				foreach([
+					'2024-07-03' => [
+						'2024-07-04',
+						'2024-07-05',
+						'2024-07-06',
+						'2024-07-07',
+					],
+					'2024-07-15' => [
+						'2024-07-08',
+						'2024-07-09',
+						'2024-07-10',
+						'2024-07-11',
+						'2024-07-12',
+						'2024-07-13',
+						'2024-07-14',
+						'2024-07-15',
+					],
+				] as $expected=>$froms)
+				{
+					foreach($froms as $from)
+						$this->assertEquals($expected, $schedule->nextAsString($from, '2024-07-03'), $from);
+				}
+		}
 	}

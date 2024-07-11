@@ -100,27 +100,40 @@
 		}
 		
 		/**
-		 * Finds the next scheduled date based on the reference date, returning a string representation.
+		 * Finds the next scheduled date based on the reference date.
 		 * @param string|int|Carbon|DateTimeInterface|null $from The reference date to calculate from (inclusive).
+		 * @param string|int|Carbon|DateTimeInterface|null $notBefore Optional. The earliest date to search for
+		 * available dates from the reference date. When using DayOfMonthScheduleMethod::ClosestWorkday,
+		 * the algorithm will first search for the closest workday before the reference date, then the closest
+		 * workday after the reference date. By default this is the reference date, but can be set to an earlier date.
 		 * @return Carbon
 		 * @throws InvalidFormatException
 		 */
-		public function nextAsString(string|int|Carbon|DateTimeInterface|null $from = null): string
+		public function nextAsString(
+			string|int|Carbon|DateTimeInterface|null $from = null,
+			string|int|Carbon|DateTimeInterface|null $notBefore = null): string
 		{
-			return $this->next($from)->format('Y-m-d');
+			return $this->next($from, $notBefore)->format('Y-m-d');
 		}
 		
 		/**
 		 * Finds the next scheduled date based on the reference date.
 		 * @param string|int|Carbon|DateTimeInterface|null $from The reference date to calculate from (inclusive).
+		 * @param string|int|Carbon|DateTimeInterface|null $notBefore Optional. The earliest date to search for
+		 * available dates from the reference date. When using DayOfMonthScheduleMethod::ClosestWorkday,
+		 * the algorithm will first search for the closest workday before the reference date, then the closest
+		 * workday after the reference date. By default this is the reference date, but can be set to an earlier date.
 		 * @return Carbon
-		 * @throws InvalidFormatException
 		 */
-		public function next(string|int|Carbon|DateTimeInterface|null $from = null): Carbon
+		public function next(
+			string|int|Carbon|DateTimeInterface|null $from = null,
+			string|int|Carbon|DateTimeInterface|null $notBefore = null): Carbon
 		{
-			$from = Carbon::parse($from);
+			$from = Carbon::parse($from ?? 'today');
 			$from->setTime(0, 0);
-			$notBefore = $from->timestamp;
+			$notBefore = Carbon::parse($notBefore ?? $from);
+			$notBefore->setTime(0, 0);
+			$notBefore = $notBefore->timestamp;
 			
 			if (!in_array($from->day, $this->calendarAvailability[$from->month]))
 				$this->moveToNextCalendarDate($from);

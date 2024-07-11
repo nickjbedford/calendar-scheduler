@@ -2,6 +2,8 @@
 	namespace YetAnother;
 	
 	use Carbon\Carbon;
+	use Carbon\CarbonInterface;
+	use Carbon\Exceptions\InvalidFormatException;
 	use DateTimeInterface;
 	
 	/**
@@ -12,9 +14,10 @@
 	 * For example, a business is open 4 days a week and wants to ship orders every 5th, 15th and
 	 * 25th day of the month. This class is capable of finding the next available shipping date.
 	 * @property Weekday[] $workdays The working days of the week to include in the schedule.
-	 * @property int[] $daysOfMonth The calendar days of the month to include in the schedule.
-	 * @property int[]|null $holidays The public holidays to exclude from the schedule (these must be in the format "YYYY-MM-DD").
+	 * @property string[]|null $holidays The public holidays to exclude from the schedule (these must be in the format "YYYY-MM-DD").
 	 * If null, ScheduleDateFinder::$defaultHolidays is used.
+	 * @property int[] $daysOfMonth The calendar days of the month to include in the schedule.
+	 * @property int[] $monthsOfYear The months of the year to include in the schedule.
 	 * @property DayOfMonthScheduleMethod $dayOfMonthScheduleMethod The method to use when finding
 	 * the next or previous most appropriate date in the schedule from a day-of-month schedule.
 	 */
@@ -25,34 +28,123 @@
 		 */
 		static array $defaultHolidays = [];
 		
-		const array AllMonths = [
-			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
+		/**
+		 * @var int The maximum number of iterations to prevent infinite loops.
+		 */
+		static int $loopLimit = 1000;
+		
+		const array EveryMonth = [
+			CarbonInterface::JANUARY,
+			CarbonInterface::FEBRUARY,
+			CarbonInterface::MARCH,
+			CarbonInterface::APRIL,
+			CarbonInterface::MAY,
+			CarbonInterface::JUNE,
+			CarbonInterface::JULY,
+			CarbonInterface::AUGUST,
+			CarbonInterface::SEPTEMBER,
+			CarbonInterface::OCTOBER,
+			CarbonInterface::NOVEMBER,
+			CarbonInterface::DECEMBER
 		];
 		
-		const array AllDaysOfMonth = [
+		const array EveryDay = [
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
 			11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
 			21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
 		];
 		
+		const array AllYear = [
+			CarbonInterface::JANUARY => self::EveryDay,
+			CarbonInterface::FEBRUARY => self::EveryDay,
+			CarbonInterface::MARCH => self::EveryDay,
+			CarbonInterface::APRIL => self::EveryDay,
+			CarbonInterface::MAY => self::EveryDay,
+			CarbonInterface::JUNE => self::EveryDay,
+			CarbonInterface::JULY => self::EveryDay,
+			CarbonInterface::AUGUST => self::EveryDay,
+			CarbonInterface::SEPTEMBER => self::EveryDay,
+			CarbonInterface::OCTOBER => self::EveryDay,
+			CarbonInterface::NOVEMBER => self::EveryDay,
+			CarbonInterface::DECEMBER => self::EveryDay
+		];
+		
+		public readonly array $holidays;
+		
+		/**
+		 * Creates a calendar availability table for each month of the year with the same day-of-month dates.
+		 * @param int[] $daysOfMonth The days of the month to make available.
+		 * @param int[] $monthsOfYear The months of the year to make available.
+		 * @return array
+		 */
+		public static function createAvailabilityCalendar(array $daysOfMonth = self::EveryDay, array $monthsOfYear = self::EveryMonth): array
+		{
+			$table = [];
+			foreach($monthsOfYear as $month)
+				$table[$month] = $daysOfMonth;
+			return $table;
+		}
+		
 		/**
 		 * @param Weekday[] $workdays The working days of the week to include in the schedule.
 		 * @param string[]|null $holidays The public holidays to exclude from the schedule (these must be in the format "YYYY-MM-DD").
-		 * @param array $daysOfMonth The calendar days of the month to include in the schedule.
-		 * @param array $monthsOfYear The months of the year to include in the schedule.
+		 * @param array $calendarAvailability The calendar days of each month of the year to make available in the schedule.
 		 * @param DayOfMonthScheduleMethod $dayOfMonthScheduleMethod
 		 */
-		public function __construct(public array                    $workdays = Weekday::Weekdays,
-		                            public ?array                   $holidays = null,
-		                            public array                    $daysOfMonth = self::AllDaysOfMonth,
-									public array                    $monthsOfYear = self::AllMonths,
+		public function __construct(public readonly array           $workdays = Weekday::Weekdays,
+		                            ?array                          $holidays = null,
+		                            public readonly array           $calendarAvailability = self::AllYear,
 		                            public DayOfMonthScheduleMethod $dayOfMonthScheduleMethod = DayOfMonthScheduleMethod::NextAvailableWorkday)
 		{
-			$this->holidays ??= self::$defaultHolidays;
+			$this->holidays = $holidays ?? self::$defaultHolidays;
 		}
 		
+		/**
+		 * Finds the next scheduled date based on the reference date.
+		 * @param string|int|Carbon|DateTimeInterface|null $from The reference date to calculate from (inclusive).
+		 * @return Carbon
+		 * @throws InvalidFormatException
+		 */
 		public function next(string|int|Carbon|DateTimeInterface|null $from = null): Carbon
 		{
 			$from = Carbon::parse($from);
+			$from->setTime(0, 0);
+			
+			$i = self::$loopLimit;
+			while($i--)
+			{
+				$this->moveToNextCalendarDate($from);
+				
+				$date = $from->format('Y-m-d');
+				if (in_array($date, $this->holidays, true) || !in_array($from->dayOfWeek, $this->workdays))
+				{
+					switch($this->dayOfMonthScheduleMethod)
+					{
+						case DayOfMonthScheduleMethod::NextAvailableDate:
+							$from->addDay();
+							break;
+							
+						case DayOfMonthScheduleMethod::NextAvailableWorkday:
+							while (!in_array($from->dayOfWeek, $this->workdays))
+								$from->addDay();
+							break;
+							
+						case DayOfMonthScheduleMethod::PreviousAvailableWorkday:
+							
+							break;
+					}
+					continue;
+				}
+				
+				break;
+			}
+			
+			return $from;
+		}
+		
+		private function moveToNextCalendarDate(Carbon $from): void
+		{
+			while (!in_array($from->dayOfMonth, $this->calendarAvailability[$from->month]))
+				$from = $from->addDay();
 		}
 	}

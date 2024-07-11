@@ -2,18 +2,20 @@
 	
 	namespace YetAnother;
 	
+	use Carbon\CarbonInterface;
+	
 	/**
 	 * Represents the ordinals of the days of the week.
 	 */
 	enum Weekday: int
 	{
-		case Sunday = 0;
-		case Monday = 1;
-		case Tuesday = 2;
-		case Wednesday = 3;
-		case Thursday = 4;
-		case Friday = 5;
-		case Saturday = 6;
+		case Sunday = CarbonInterface::SUNDAY;
+		case Monday = CarbonInterface::MONDAY;
+		case Tuesday = CarbonInterface::TUESDAY;
+		case Wednesday = CarbonInterface::WEDNESDAY;
+		case Thursday = CarbonInterface::THURSDAY;
+		case Friday = CarbonInterface::FRIDAY;
+		case Saturday = CarbonInterface::SATURDAY;
 		
 		const array Weekdays = [
 			Weekday::Monday,

@@ -1,4 +1,5 @@
 <?php
+	/** @noinspection PhpUnused */
 	
 	namespace YetAnother;
 	
@@ -17,21 +18,62 @@
 		private array $workdays = [];
 		private array $preferredWorkdays = [];
 		private array $holidays = [];
-		private array $calendar = [];
-		private DayOfMonthScheduleMethod $dayOfMonthScheduleMethod = DayOfMonthScheduleMethod::NextWorkday;
+		private array $preferredCalendar = [];
+		private ScheduleAlgorithm $algorithm = ScheduleAlgorithm::Default;
 		
 		/**
 		 * Creates the schedule date finder.
 		 * @throws Exception
 		 */
-		function create(): ScheduleDateFinder
+		function create(): ScheduleFinder
 		{
-			return new ScheduleDateFinder(
+			return new ScheduleFinder(
 				$this->workdays,
 				!empty($this->preferredWorkdays) ? $this->preferredWorkdays : null,
-				$this->calendar,
+				!empty($this->preferredCalendar) ? $this->preferredCalendar : null,
 				$this->holidays,
-				$this->dayOfMonthScheduleMethod);
+				$this->algorithm);
+		}
+		
+		/**
+		 * Sets the algorithm to use when finding the next date in a schedule.
+		 * @param ScheduleAlgorithm $algorithm
+		 * @return $this
+		 */
+		function useAlgorithm(ScheduleAlgorithm $algorithm): self
+		{
+			$this->algorithm = $algorithm;
+			return $this;
+		}
+		
+		function findingClosestPreferredThenClosestStandardWorkday(): self
+		{
+			return $this->useAlgorithm(ScheduleAlgorithm::ClosestPreferredThenClosestStandardWorkday);
+		}
+		
+		function findingClosestPreferredWorkday(): self
+		{
+			return $this->useAlgorithm(ScheduleAlgorithm::ClosestPreferredWorkday);
+		}
+		
+		function findingClosestStandardWorkday(): self
+		{
+			return $this->useAlgorithm(ScheduleAlgorithm::ClosestStandardWorkday);
+		}
+		
+		function findingNextPreferredThenClosestStandardWorkday(): self
+		{
+			return $this->useAlgorithm(ScheduleAlgorithm::NextPreferredThenClosestStandardWorkday);
+		}
+		
+		function findingNextPreferredWorkday(): self
+		{
+			return $this->useAlgorithm(ScheduleAlgorithm::NextPreferredWorkday);
+		}
+		
+		function findingNextStandardWorkday(): self
+		{
+			return $this->useAlgorithm(ScheduleAlgorithm::NextStandardWorkday);
 		}
 		
 		/**
@@ -47,12 +89,21 @@
 		}
 		
 		/**
+		 * Adds all weekdays as available workdays.
+		 * @return $this
+		 */
+		function availableAllWeek(): self
+		{
+			return $this->availableOn(Weekday::All);
+		}
+		
+		/**
 		 * Adds monday to friday as available workdays.
 		 * @return $this
 		 */
 		function availableMondayToFriday(): self
 		{
-			$this->workdays = Weekday::Weekdays;
+			$this->workdays = Weekday::MondayToFriday;
 			return $this;
 		}
 		
@@ -141,7 +192,7 @@
 		 * @param array $weekdays
 		 * @return $this
 		 */
-		function prefer(array $weekdays): self
+		function preferSpecificWeekdays(array $weekdays): self
 		{
 			foreach($weekdays as $day)
 				$this->preferredWorkdays[] = $day;
@@ -154,9 +205,7 @@
 		 */
 		function preferMondayToFriday(): self
 		{
-			foreach(Weekday::Weekdays as $day)
-				$this->preferredWorkdays[] = $day;
-			return $this;
+			return $this->preferSpecificWeekdays(Weekday::MondayToFriday);
 		}
 		
 		/**
@@ -165,9 +214,7 @@
 		 */
 		function preferWeekends(): self
 		{
-			foreach(Weekday::Weekends as $day)
-				$this->preferredWorkdays[] = $day;
-			return $this;
+			return $this->preferSpecificWeekdays(Weekday::Weekends);
 		}
 		
 		/**
@@ -245,7 +292,7 @@
 		 * @param string|Carbon|int $date The date to add as a holiday to exclude.
 		 * @return $this
 		 */
-		function addHoliday(string|Carbon|int $date): self
+		function excludeDate(string|Carbon|int $date): self
 		{
 			$this->holidays[] = Carbon::parse($date)->format('Y-m-d');
 			return $this;
@@ -256,156 +303,157 @@
 		 * @param array $dates The dates to add as holidays to exclude.
 		 * @return $this
 		 */
-		function addHolidays(array $dates): self
+		function excludeDates(array $dates): self
 		{
 			foreach($dates as $date)
-				$this->addHoliday($date);
+				$this->excludeDate($date);
 			return $this;
 		}
 		
 		/**
 		 * Sets the availability for the specified months and days.
-		 * @param int[] $months The months available.
-		 * @param int[] $days The days available.
+		 * @param int[] $days The days of the month preferred.
+		 * @param int[] $months The months to fill these preferred days.
 		 * @return $this
 		 */
-		function setAvailability(array $months = ScheduleDateFinder::EveryMonth,
-		                         array $days = ScheduleDateFinder::EveryDay): self
+		function preferCalendarDaysInSpecificMonths(array $days = ScheduleFinder::EveryDay,
+		                                            array $months = ScheduleFinder::EveryMonth): self
 		{
 			foreach($months as $month)
-				$this->setAvailabilityForMonth($month, $days);
+				$this->preferDaysInSpecificMonth($month, $days);
 			return $this;
 		}
 		
 		/**
-		 * Sets the days available during a particular month.
+		 * Adds the days preferred during a particular month.
 		 * @param int $month The month number (1-12).
-		 * @param int[] $days The days of the month available.
+		 * @param int[] $days The days of the month preferred.
 		 * @return $this
 		 */
-		function setAvailabilityForMonth(int $month, array $days = ScheduleDateFinder::EveryDay): self
+		function preferDaysInSpecificMonth(int $month, array $days): self
 		{
-			$this->calendar[$month] = $days;
+			foreach($days as $day)
+				$this->preferredCalendar[$month][] = $day;
 			return $this;
 		}
 		
 		/**
-		 * Sets the days available during January.
-		 * @param int[] $days The days of the month available.
+		 * Sets the days preferred during January.
+		 * @param int[] $days The days of the month preferred.
 		 * @return $this
 		 */
-		function setJanuaryAvailability(array $days = ScheduleDateFinder::EveryDay): self
+		function preferDaysInJanuary(array $days): self
 		{
-			return $this->setAvailabilityForMonth(1, $days);
+			return $this->preferDaysInSpecificMonth(1, $days);
 		}
 		
 		/**
-		 * Sets the days available during February.
-		 * @param int[] $days The days of the month available.
+		 * Sets the days preferred during February.
+		 * @param int[] $days The days of the month preferred.
 		 * @return $this
 		 */
-		function setFebruaryAvailability(array $days = ScheduleDateFinder::EveryDay): self
+		function preferDaysInFebruary(array $days): self
 		{
-			return $this->setAvailabilityForMonth(2, $days);
+			return $this->preferDaysInSpecificMonth(2, $days);
 		}
 		
 		/**
-		 * Sets the days available during March.
-		 * @param int[] $days The days of the month available.
+		 * Sets the days preferred during March.
+		 * @param int[] $days The days of the month preferred.
 		 * @return $this
 		 */
-		function setMarchAvailability(array $days = ScheduleDateFinder::EveryDay): self
+		function preferDaysInMarch(array $days): self
 		{
-			return $this->setAvailabilityForMonth(3, $days);
+			return $this->preferDaysInSpecificMonth(3, $days);
 		}
 		
 		/**
-		 * Sets the days available during April.
-		 * @param int[] $days The days of the month available.
+		 * Sets the days preferred during April.
+		 * @param int[] $days The days of the month preferred.
 		 * @return $this
 		 */
-		function setAprilAvailability(array $days = ScheduleDateFinder::EveryDay): self
+		function preferDaysInApril(array $days): self
 		{
-			return $this->setAvailabilityForMonth(4, $days);
+			return $this->preferDaysInSpecificMonth(4, $days);
 		}
 		
 		/**
-		 * Sets the days available during May.
-		 * @param int[] $days The days of the month available.
+		 * Sets the days preferred during May.
+		 * @param int[] $days The days of the month preferred.
 		 * @return $this
 		 */
-		function setMayAvailability(array $days = ScheduleDateFinder::EveryDay): self
+		function preferDaysInMay(array $days): self
 		{
-			return $this->setAvailabilityForMonth(5, $days);
+			return $this->preferDaysInSpecificMonth(5, $days);
 		}
 		
 		/**
-		 * Sets the days available during June.
-		 * @param int[] $days The days of the month available.
+		 * Sets the days preferred during June.
+		 * @param int[] $days The days of the month preferred.
 		 * @return $this
 		 */
-		function setJuneAvailability(array $days = ScheduleDateFinder::EveryDay): self
+		function preferDaysInJune(array $days): self
 		{
-			return $this->setAvailabilityForMonth(6, $days);
+			return $this->preferDaysInSpecificMonth(6, $days);
 		}
 		
 		/**
-		 * Sets the days available during July.
-		 * @param int[] $days The days of the month available.
+		 * Sets the days preferred during July.
+		 * @param int[] $days The days of the month preferred.
 		 * @return $this
 		 */
-		function setJulyAvailability(array $days = ScheduleDateFinder::EveryDay): self
+		function preferDaysInJuly(array $days): self
 		{
-			return $this->setAvailabilityForMonth(7, $days);
+			return $this->preferDaysInSpecificMonth(7, $days);
 		}
 		
 		/**
-		 * Sets the days available during August.
-		 * @param int[] $days The days of the month available.
+		 * Sets the days preferred during August.
+		 * @param int[] $days The days of the month preferred.
 		 * @return $this
 		 */
-		function setAugustAvailability(array $days = ScheduleDateFinder::EveryDay): self
+		function preferDaysInAugust(array $days): self
 		{
-			return $this->setAvailabilityForMonth(8, $days);
+			return $this->preferDaysInSpecificMonth(8, $days);
 		}
 		
 		/**
-		 * Sets the days available during September.
-		 * @param int[] $days The days of the month available.
+		 * Sets the days preferred during September.
+		 * @param int[] $days The days of the month preferred.
 		 * @return $this
 		 */
-		function setSeptemberAvailability(array $days = ScheduleDateFinder::EveryDay): self
+		function preferDaysInSeptember(array $days): self
 		{
-			return $this->setAvailabilityForMonth(9, $days);
+			return $this->preferDaysInSpecificMonth(9, $days);
 		}
 		
 		/**
-		 * Sets the days available during October.
-		 * @param int[] $days The days of the month available.
+		 * Sets the days preferred during October.
+		 * @param int[] $days The days of the month preferred.
 		 * @return $this
 		 */
-		function setOctoberAvailability(array $days = ScheduleDateFinder::EveryDay): self
+		function preferDaysInOctober(array $days): self
 		{
-			return $this->setAvailabilityForMonth(10, $days);
+			return $this->preferDaysInSpecificMonth(10, $days);
 		}
 		
 		/**
-		 * Sets the days available during November.
-		 * @param int[] $days The days of the month available.
+		 * Sets the days preferred during November.
+		 * @param int[] $days The days of the month preferred.
 		 * @return $this
 		 */
-		function setNovemberAvailability(array $days = ScheduleDateFinder::EveryDay): self
+		function preferDaysInNovember(array $days): self
 		{
-			return $this->setAvailabilityForMonth(11, $days);
+			return $this->preferDaysInSpecificMonth(11, $days);
 		}
 		
 		/**
-		 * Sets the days available during December.
-		 * @param int[] $days The days of the month available.
+		 * Sets the days preferred during December.
+		 * @param int[] $days The days of the month preferred.
 		 * @return $this
 		 */
-		function setDecemberAvailability(array $days = ScheduleDateFinder::EveryDay): self
+		function preferDaysInDecember(array $days): self
 		{
-			return $this->setAvailabilityForMonth(12, $days);
+			return $this->preferDaysInSpecificMonth(12, $days);
 		}
 	}

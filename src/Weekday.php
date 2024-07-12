@@ -17,7 +17,7 @@
 		const int Friday = CarbonInterface::FRIDAY;
 		const int Saturday = CarbonInterface::SATURDAY;
 		
-		const array Weekdays = [
+		const array MondayToFriday = [
 			Weekday::Monday,
 			Weekday::Tuesday,
 			Weekday::Wednesday,

@@ -9,7 +9,7 @@
 		protected function setUp(): void
 		{
 			parent::setUp();
-			ScheduleDateFinder::$defaultHolidays = [];
+			ScheduleFinder::$defaultExcludedHolidays = [];
 		}
 		
 		/**
@@ -17,12 +17,12 @@
 		 */
 		function testEveryCalendarDayAndWeekdaysFindsDate()
 		{
-			/** @var DayOfMonthScheduleMethod $method */
-			foreach([ DayOfMonthScheduleMethod::NextPreferredDate, DayOfMonthScheduleMethod::NextWorkday ] as $method)
+			/** @var ScheduleAlgorithm $algorithm */
+			foreach([ ScheduleAlgorithm::NextPreferredWorkday, ScheduleAlgorithm::NextStandardWorkday ] as $algorithm)
 			{
-				$schedule = new ScheduleDateFinder(
-					Weekday::Weekdays,
-					dayOfMonthScheduleMethod: $method);
+				$schedule = new ScheduleFinder(
+					standardWorkdays: Weekday::MondayToFriday,
+					algorithm: $algorithm);
 				
 				foreach([
 					'2024-07-01' => '2024-07-01',
@@ -34,12 +34,12 @@
 					'2024-07-07' => '2024-07-08',
 					'2024-07-08' => '2024-07-08',
 				] as $from=>$expected)
-					$this->assertEquals($expected, $schedule->nextAsString($from), $method->name);
+					$this->assertEquals($expected, $schedule->nextAsString($from), $algorithm->name);
 				
-				$schedule = new ScheduleDateFinder(
-					Weekday::Weekdays,
-					holidays: [ '2024-07-03' ],
-					dayOfMonthScheduleMethod: $method);
+				$schedule = new ScheduleFinder(
+					standardWorkdays: Weekday::MondayToFriday,
+					excludedDates: [ '2024-07-03' ],
+					algorithm:     $algorithm);
 				
 				foreach([
 					'2024-07-01' => '2024-07-01',
@@ -51,7 +51,7 @@
 					'2024-07-07' => '2024-07-08',
 					'2024-07-08' => '2024-07-08',
 				] as $from=>$expected)
-					$this->assertEquals($expected, $schedule->nextAsString($from), $method->name);
+					$this->assertEquals($expected, $schedule->nextAsString($from), $algorithm->name);
 			}
 		}
 		
@@ -60,11 +60,11 @@
 		 */
 		function testEveryCalendarDayAndSelectWeekdaysFindsDate()
 		{
-			foreach([ DayOfMonthScheduleMethod::NextPreferredDate, DayOfMonthScheduleMethod::NextWorkday ] as $method)
+			foreach([ ScheduleAlgorithm::NextPreferredWorkday, ScheduleAlgorithm::NextStandardWorkday ] as $algorithm)
 			{
-				$schedule = new ScheduleDateFinder(
-					Weekday::MondayWednesdayFriday,
-					dayOfMonthScheduleMethod: $method);
+				$schedule = new ScheduleFinder(
+					standardWorkdays: Weekday::MondayWednesdayFriday,
+					algorithm: $algorithm);
 				
 				foreach([
 					'2024-07-01' => '2024-07-01',
@@ -76,15 +76,15 @@
 					'2024-07-07' => '2024-07-08',
 					'2024-07-08' => '2024-07-08',
 				] as $from=>$expected)
-					$this->assertEquals($expected, $schedule->nextAsString($from), $method->name);
+					$this->assertEquals($expected, $schedule->nextAsString($from), $algorithm->name);
 				
-				$schedule = new ScheduleDateFinder(
-					Weekday::MondayWednesdayFriday,
-					holidays: [
+				$schedule = new ScheduleFinder(
+					standardWorkdays: Weekday::MondayWednesdayFriday,
+					excludedDates: [
 						'2024-07-03',
 						'2024-07-08',
 					],
-					dayOfMonthScheduleMethod: $method);
+					algorithm:     $algorithm);
 				
 				foreach([
 					'2024-07-01' => '2024-07-01',
@@ -96,7 +96,7 @@
 					'2024-07-07' => '2024-07-10',
 					'2024-07-08' => '2024-07-10',
 				] as $from=>$expected)
-					$this->assertEquals($expected, $schedule->nextAsString($from), $method->name);
+					$this->assertEquals($expected, $schedule->nextAsString($from), $algorithm->name);
 			}
 		}
 		
@@ -105,11 +105,11 @@
 		 */
 		function testEveryCalendarDayAndMondayFindsDate()
 		{
-			foreach([ DayOfMonthScheduleMethod::NextPreferredDate, DayOfMonthScheduleMethod::NextWorkday ] as $method)
+			foreach([ ScheduleAlgorithm::NextPreferredWorkday, ScheduleAlgorithm::NextStandardWorkday ] as $algorithm)
 			{
-				$schedule = new ScheduleDateFinder(
-					[ Weekday::Monday ],
-					dayOfMonthScheduleMethod: $method);
+				$schedule = new ScheduleFinder(
+					standardWorkdays: [ Weekday::Monday ],
+					algorithm: $algorithm);
 				
 				foreach([
 					'2024-07-01' => '2024-07-01',
@@ -122,7 +122,7 @@
 					'2024-07-08' => '2024-07-08',
 					'2024-07-09' => '2024-07-15',
 				] as $from=>$expected)
-					$this->assertEquals($expected, $schedule->nextAsString($from), $method->name);
+					$this->assertEquals($expected, $schedule->nextAsString($from), $algorithm->name);
 			}
 		}
 		
@@ -131,8 +131,8 @@
 		 */
 		function testSpecificCalendarDaysFindsNextDate()
 		{
-			$schedule = new ScheduleDateFinder(
-				availabilityCalendar: ScheduleDateFinder::createAvailabilityCalendar([ 5, 15, 25 ]));
+			$schedule = new ScheduleFinder(
+				preferredCalendar: ScheduleFinder::createPreferredCalendar([ 5, 15, 25 ]));
 			
 				foreach([
 					'2024-07-05' => [
@@ -181,10 +181,14 @@
 		/**
 		 * @throws Exception
 		 */
-		function testSpecificCalendarDaysInAugustFindsNextDate()
+		function testSpecificCalendarDaysInAugustFindsNextPreferredDate()
 		{
-			$schedule = new ScheduleDateFinder(
-				availabilityCalendar: ScheduleDateFinder::createAvailabilityCalendar([ 5, 15, 25 ]));
+			$schedule = (new ScheduleDesigner())
+				->preferCalendarDaysInSpecificMonths(days: [ 5, 15, 25 ])
+				->availableMondayToFriday()
+				->create();
+			
+			$this->assertCount(5, $schedule->standardWorkdays);
 			
 				foreach([
 					'2024-08-05' => [
@@ -211,7 +215,7 @@
 						'2024-08-14',
 						'2024-08-15',
 					],
-					'2024-08-26' => [
+					'2024-08-23' => [
 						'2024-08-16',
 						'2024-08-17',
 						'2024-08-18',
@@ -220,13 +224,15 @@
 						'2024-08-21',
 						'2024-08-22',
 						'2024-08-23',
+					],
+					'2024-08-26' => [
 						'2024-08-24',
 						'2024-08-25',
 					],
 				] as $expected=>$froms)
 				{
 					foreach($froms as $from)
-						$this->assertEquals($expected, $schedule->nextAsString($from));
+						$this->assertEquals($expected, $schedule->nextAsString($from), $from);
 				}
 		}
 		
@@ -235,10 +241,9 @@
 		 */
 		function testSpecificCalendarDaysInAugustFindsPreviousDate()
 		{
-			$schedule = new ScheduleDateFinder(
-				                          [ Weekday::Monday, Weekday::Tuesday, Weekday::Wednesday ],
-				availabilityCalendar:     ScheduleDateFinder::createAvailabilityCalendar([ 7, 15, 25 ]),
-				dayOfMonthScheduleMethod: DayOfMonthScheduleMethod::ClosestWorkday);
+			$schedule = new ScheduleFinder(
+				standardWorkdays: [ Weekday::Monday, Weekday::Tuesday, Weekday::Wednesday ],
+				preferredCalendar: ScheduleFinder::createPreferredCalendar([ 7, 15, 25 ]));
 			
 				foreach([
 					'2024-07-03' => [
@@ -293,10 +298,9 @@
 		 */
 		function testSpecificCalendarDaysInAugustFindsPreviousDateWithEarlierNotBefore()
 		{
-			$schedule = new ScheduleDateFinder(
-				                          [ Weekday::Monday, Weekday::Wednesday ],
-				availabilityCalendar:     ScheduleDateFinder::createAvailabilityCalendar([ 7, 15, 25 ]),
-				dayOfMonthScheduleMethod: DayOfMonthScheduleMethod::ClosestWorkday);
+			$schedule = new ScheduleFinder(
+				standardWorkdays: [ Weekday::Monday, Weekday::Wednesday ],
+				preferredCalendar: ScheduleFinder::createPreferredCalendar([ 7, 15, 25 ]));
 			
 				foreach([
 					'2024-07-03' => [
@@ -327,11 +331,11 @@
 		 */
 		function testSpecificClosestWorkdayScheduleWorks()
 		{
-			$schedule = new ScheduleDateFinder(
-				workdays:                 [Weekday::Monday, Weekday::Wednesday, Weekday::Friday],
-				availabilityCalendar:     ScheduleDateFinder::createAvailabilityCalendar([5, 15, 25]),
-				holidays:                 ['2024-06-17'],
-				dayOfMonthScheduleMethod: DayOfMonthScheduleMethod::ClosestWorkday);
+			$schedule = new ScheduleFinder(
+				standardWorkdays:  [Weekday::Monday, Weekday::Wednesday, Weekday::Friday],
+				preferredCalendar: ScheduleFinder::createPreferredCalendar([5, 15, 25]),
+				excludedDates:     ['2024-06-17'],
+				algorithm:         ScheduleAlgorithm::ClosestStandardWorkday);
 			
 			/**
 			 * '2024-06-05' Tuesday because 5th is a Wednesday so the next
@@ -362,5 +366,63 @@
 			 * so the closest workday (not before 25th June) is the Wednesday after the 25th.
 			 */
 			$this->assertEquals('2024-06-26', $schedule->nextAsString(from: '2024-06-25'));
+		}
+		
+		/**
+		 * @throws Exception
+		 */
+		function testPreferredWorkdaysFallsBackToAvailableWorkdaysDueToPublicHoliday()
+		{
+			$schedule = (new ScheduleDesigner())
+				->availableMondayToFriday()
+				->preferFridays()
+				->useAlgorithm(ScheduleAlgorithm::NextPreferredThenClosestStandardWorkday)
+				->excludeDate('2024-07-05')
+				->create();
+			
+			foreach([
+				[ '2024-07-04', '2024-07-01', null ],
+				[ '2024-07-04', '2024-07-02', null ],
+				[ '2024-07-04', '2024-07-03', null ],
+				[ '2024-07-04', '2024-07-04', null ],
+				[ '2024-07-04', '2024-07-05', '2024-07-01' ], // not before is earlier which allows for the Thursday 4th
+				[ '2024-07-08', '2024-07-05', null ],
+				[ '2024-07-12', '2024-07-06', null ],
+				[ '2024-07-12', '2024-07-07', null ],
+				[ '2024-07-12', '2024-07-08', null ],
+				[ '2024-07-12', '2024-07-09', null ],
+				[ '2024-07-12', '2024-07-10', null ],
+				[ '2024-07-12', '2024-07-11', null ],
+				[ '2024-07-12', '2024-07-12', null ],
+			] as $item)
+			{
+				$expected = $item[0];
+				$from = $item[1];
+				$notBefore = $item[2] ?? $from;
+				$this->assertEquals($expected, $schedule->nextAsString(from: $from, notBefore: $notBefore), "from: $from, notBefore: $notBefore");
+			}
+		}
+		
+		/**
+		 * @throws Exception
+		 */
+		function testOnlyPreferredCalendarIsUsedToFindDatesWithAlgorithm()
+		{
+			$schedule = (new ScheduleDesigner())
+				->preferDaysInFebruary([ 15 ])
+				->preferDaysInApril([ 5 ])
+				->availableAllWeek()
+				->useAlgorithm(ScheduleAlgorithm::OnlyPreferredDates)
+				->excludeDate('2026-02-15')
+				->create();
+			
+			foreach([
+				'2025-02-15' => '2024-07-01',
+				'2025-04-05' => '2025-02-16',
+				'2026-04-05' => '2025-07-01',
+			] as $expected=>$from)
+			{
+				$this->assertEquals($expected, $schedule->nextAsString(from: $from), $from);
+			}
 		}
 	}

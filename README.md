@@ -40,9 +40,9 @@ $biannual = CalendarTimer::sixMonthly($date);
 $yearly = CalendarTimer::yearly($date);
 ```
 
-## ScheduleDateFinder
+## ScheduleFinder
 
-The `ScheduleDateFinder` class can be used to find the next or previous
+The `ScheduleFinder` class can be used to find the next or previous
 date in a configuration for "available" workdays across a calendar year
 while also specifying holiday dates to exclude.
 
@@ -50,20 +50,20 @@ For example, a business may only want to ship orders on Mondays, Wednesdays
 and Fridays but also prefer to only ship on the 5th, 15th and 25th days of
 each month. This class helps you discover the next most appropriate shipping
 date based on a reference date, allowing for an optional "not-before" date
-when using the `YetAnother\DayOfMonthSchedule::ClosestWorkday` option.
+when using the `YetAnother\ScheduleAlgorithm::ClosestWorkday` option.
 
 ### Examples
 
 ```php
-use YetAnother\ScheduleDateFinder;
+use YetAnother\ScheduleFinder;
 use YetAnother\Weekday;
-use YetAnother\DayOfMonthScheduleMethod;
+use YetAnother\ScheduleAlgorithm;
 
-$schedule = new ScheduleDateFinder(
-    workdays: [ Weekday::Monday, Weekday::Wednesday, Weekday::Friday ],
+$schedule = new ScheduleFinder(
+    standardWorkdays: [ Weekday::Monday, Weekday::Wednesday, Weekday::Friday ],
     holidays: [ '2024-06-17' ],
-    availabilityCalendar: ScheduleDateFinder::createAvailabilityCalendar([ 5, 15, 25 ]),
-    dayOfMonthScheduleMethod: DayOfMonthScheduleMethod::ClosestWorkday);
+    preferredCalendar: ScheduleFinder::createPreferredCalendar([ 5, 15, 25 ]),
+    algorithm: ScheduleAlgorithm::ClosestWorkday);
 
 /**
  * '2024-06-05' Tuesday because 5th is a Wednesday so the next

@@ -1,4 +1,4 @@
-# CalendarTimer (Yet Another)
+# YetAnother\CalendarTimer
 
 Provides day, month and year-based calendar schedule
 calculation. For each type of timer, a reference
@@ -40,17 +40,33 @@ $biannual = CalendarTimer::sixMonthly($date);
 $yearly = CalendarTimer::yearly($date);
 ```
 
-## ScheduleFinder
+# YetAnother\ScheduleFinder
 
 The `ScheduleFinder` class can be used to find the next or previous
 date in a configuration for "available" workdays across a calendar year
 while also specifying holiday dates to exclude.
 
-For example, a business may only want to ship orders on Mondays, Wednesdays
+### Use Case Example
+
+A business may only want to ship orders on Mondays, Wednesdays
 and Fridays but also prefer to only ship on the 5th, 15th and 25th days of
 each month. This class helps you discover the next most appropriate shipping
-date based on a reference date, allowing for an optional "not-before" date
-when using the `YetAnother\ScheduleAlgorithm::ClosestWorkday` option.
+date based on a reference date, allowing for an optional "earliest-date".
+
+#### Example 1a
+
+- Standard workdays are Monday to Friday.
+- Today is the Monday 1st July 2024.
+- A product doesn't need to be shipped until Thursday 11th July 2024.
+- Preferred shipping days are Tuesdays and Fridays.
+
+The `ScheduleFinder::closest(date: '2024-07-11', earliestDate: '2024-07-01')`
+method will choose Tuesday 9th July 2024 as the preferred shipping day.
+
+#### Example 1b
+
+- It turns out tuesday 9th July is a public holiday.
+- The next best workday is Monday 10th July 2024.
 
 ### Examples
 

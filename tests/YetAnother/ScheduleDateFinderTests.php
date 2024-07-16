@@ -34,7 +34,7 @@
 					'2024-07-07' => '2024-07-08',
 					'2024-07-08' => '2024-07-08',
 				] as $from=>$expected)
-					$this->assertEquals($expected, $schedule->nextAsString($from), $algorithm->name);
+ 					$this->assertEquals($expected, $schedule->nextAsString($from), "$algorithm->name, from: $from, expected: $expected");
 				
 				$schedule = new ScheduleFinder(
 					standardWorkdays: Weekday::MondayToFriday,
@@ -174,7 +174,7 @@
 				] as $expected=>$froms)
 				{
 					foreach($froms as $from)
-						$this->assertEquals($expected, $schedule->nextAsString($from));
+						$this->assertEquals($expected, $schedule->nextAsString($from), "expected: $expected, from: $from");
 				}
 		}
 		
@@ -399,7 +399,7 @@
 				$expected = $item[0];
 				$from = $item[1];
 				$notBefore = $item[2] ?? $from;
-				$this->assertEquals($expected, $schedule->nextAsString(from: $from, notBefore: $notBefore), "from: $from, notBefore: $notBefore");
+				$this->assertEquals($expected, $schedule->nextAsString($from, $notBefore), "from: $from, notBefore: $notBefore");
 			}
 		}
 		
@@ -424,5 +424,42 @@
 			{
 				$this->assertEquals($expected, $schedule->nextAsString(from: $from), $from);
 			}
+		}
+		
+		/**
+		 * @throws Exception
+		 */
+		function testFindClosestPreferredWorkdayBeforeUsingAlgorithm()
+		{
+			$schedule = (new ScheduleDesigner())
+				->preferCalendarDaysInSpecificMonths([ 15 ])
+				->preferSpecificWeekdays(Weekday::MondayWednesdayFriday)
+				->availableMondayToFriday()
+				->findingClosestPreferredThenClosestStandardWorkday()
+				->create();
+			
+			$notBefore = '2024-07-01';
+			$expected = '2024-07-15';
+			$dates = [
+				'2024-07-01',
+				'2024-07-05',
+				'2024-07-08',
+				'2024-07-14',
+				'2024-07-15',
+				'2024-07-16',
+			];
+			
+			foreach($dates as $date)
+				$this->assertEquals($expected, $schedule->findClosestPreferredDate($date, $notBefore)->toDateString(), $date);
+			
+			$notBefore = '2024-07-16';
+			$expected = '2024-08-15';
+			$dates = [
+				'2024-07-16',
+				'2024-08-05',
+			];
+			
+			foreach($dates as $date)
+				$this->assertEquals($expected, $schedule->findClosestPreferredDate($date, $notBefore)->toDateString(), $date);
 		}
 	}

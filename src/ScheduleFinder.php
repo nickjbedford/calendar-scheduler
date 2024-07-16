@@ -113,10 +113,72 @@
 		}
 		
 		/**
+		 * Finds the closest preferred workday based on the reference date without
+		 * considering the standard/available workdays and public holidays.
+		 * This date may be before the reference date if there are elligible preferred workdays,
+		 * but not before the $earliestDate date. This can be used to find the most appropriate
+		 * preferred date to pass into {@see ScheduleFinder::next()} (inclusive).
+		 * @param string|int|Carbon|DateTimeInterface|null $date
+		 * @param string|int|Carbon|DateTimeInterface|null $earliestDate
+		 * @return Carbon
+		 * @throws Exception
+		 */
+		public function findClosestPreferredDate(
+			string|int|Carbon|DateTimeInterface|null $date = null,
+			string|int|Carbon|DateTimeInterface|null $earliestDate = null): Carbon
+		{
+			$date = Carbon::parse($date ?? 'today');
+			$date->setTime(0, 0);
+			
+			$earliestDate = Carbon::parse($earliestDate ?? $date);
+			$earliestDate->setTime(0, 0);
+			$notBefore = $earliestDate->timestamp;
+			$iterations = self::$iterationLimit;
+			
+			while ($iterations--)
+			{
+				if ($this->isPreferredDate($date))
+					return $date;
+				
+				if ($this->preferredCalendar !== null)
+				{
+					$copy = $date->copy();
+					$isPreferred = false;
+					while($iterations-- && ($notBefore <= $copy->timestamp) && !($isPreferred = $this->isPreferredCalendarDate($copy)))
+						$copy->subDay();
+					
+					if ($isPreferred)
+						return $copy;
+					
+					$isPreferred = false;
+					while($iterations-- && !($isPreferred = $this->isPreferredCalendarDate($date)))
+						$date->addDay();
+					
+					if ($isPreferred)
+						return $date;
+				}
+				
+				if ($this->findNextMostAppropriateDate($date,
+				                                       $notBefore,
+				                                       ScheduleAlgorithm::ClosestPreferredWorkday,
+				                                       $iterations))
+					return $date;
+				
+				$this->moveToNextPreferredDate($date, $iterations);
+			}
+			
+			if ($iterations <= 0)
+				throw new Exception('The iteration limit was reached while finding the next scheduled date. Please check the schedule configuration.');
+			
+			return $date;
+		}
+		
+		
+		/**
 		 * Finds the next scheduled date based on the reference date, returning the date as a string ("Y-m-d" format).
 		 *
 		 * @param string|int|Carbon|DateTimeInterface|null $from The reference date to calculate from (inclusive).
-		 * @param string|int|Carbon|DateTimeInterface|null $notBefore Optional. The earliest date to allow to be selected.
+		 * @param string|int|Carbon|DateTimeInterface|null $earliestDate Optional. The earliest date to allow to be selected.
 		 * This may be before the reference date, allowing {@see ScheduleAlgorithm::ClosestPreferredThenClosestStandardWorkday}
 		 * to function.
 		 * @return Carbon
@@ -124,9 +186,9 @@
 		 */
 		public function nextAsString(
 			string|int|Carbon|DateTimeInterface|null $from = null,
-			string|int|Carbon|DateTimeInterface|null $notBefore = null): string
+			string|int|Carbon|DateTimeInterface|null $earliestDate = null): string
 		{
-			return $this->next($from, $notBefore)->format('Y-m-d');
+			return $this->next($from, $earliestDate)->toDateString();
 		}
 		
 		/**
@@ -198,16 +260,16 @@
 					$isPreferred = false;
 					$originalTimestamp = $date->timestamp;
 					
-					while ($iterations-- && ($date->timestamp >= $earliestDate) && !($isPreferred = $this->isPreferredWorkday($date)))
+					while ($iterations-- && !($isPreferred = $this->isPreferredWorkday($date)) && ($date->timestamp >= $earliestDate))
 						$date->subDay();
 					
-					if ($isPreferred && ($date->timestamp >= $earliestDate) && $this->isAvailableDate($date))
+					if ($isPreferred && $this->isAvailableDate($date) && ($date->timestamp >= $earliestDate))
 						return true;
 					
 					$date->setTimestamp($originalTimestamp);
 					
 					$isAvailable = false;
-					while ($iterations-- && ($date->timestamp >= $earliestDate) && !($isAvailable = $this->isAvailableDate($date)))
+					while ($iterations-- && !($isAvailable = $this->isAvailableDate($date)) && ($date->timestamp >= $earliestDate))
 						$date->subDay();
 					
 					if ($date->timestamp >= $earliestDate && $isAvailable)
@@ -222,7 +284,7 @@
 					$originalTimestamp = $date->timestamp;
 					$isPreferred = false;
 					
-					while ($iterations-- && ($date->timestamp >= $earliestDate) && !($isPreferred = $this->isPreferredWorkday($date)))
+					while ($iterations-- && !($isPreferred = $this->isPreferredWorkday($date)) && ($date->timestamp >= $earliestDate))
 						$date->subDay();
 					
 					if ($isPreferred && ($date->timestamp >= $earliestDate) && $this->isAvailableDate($date))
@@ -237,7 +299,7 @@
 				case ScheduleAlgorithm::ClosestStandardWorkday:
 					$isAvailable = false;
 					$originalTimestamp = $date->timestamp;
-					while ($iterations-- && ($date->timestamp >= $earliestDate) && !($isAvailable = $this->isAvailableDate($date)))
+					while ($iterations-- && !($isAvailable = $this->isAvailableDate($date)) && ($date->timestamp >= $earliestDate))
 						$date->subDay();
 					
 					if ($date->timestamp < $earliestDate)
@@ -266,7 +328,7 @@
 					
 				case ScheduleAlgorithm::NextPreferredWorkday:
 					$isAvailable = false;
-					while ($iterations-- && !$this->isPreferredWorkday($date) && !($isAvailable = $this->isAvailableDate($date)))
+					while ($iterations-- && !($isAvailable = $this->isAvailableDate($date)) && !$this->isPreferredWorkday($date))
 						$date->addDay();
 					return $isAvailable;
 				
@@ -280,14 +342,14 @@
 					$isAvailable = false;
 					if ($this->preferredCalendar !== null)
 					{
-						while ($iterations-- && !$this->isPreferredCalendarDate($date) && !($isAvailable = $this->isAvailableDate($date)))
+						while ($iterations-- && !($isAvailable = $this->isAvailableDate($date)) && !$this->isPreferredCalendarDate($date))
 							$date->addDay();
 						if ($isAvailable)
 							return true;
 					}
 					else if ($this->preferredWorkdays !== null)
 					{
-						while ($iterations-- && !$this->isPreferredWorkday($date) && !($isAvailable = $this->isAvailableDate($date)))
+						while ($iterations-- && !($isAvailable = $this->isAvailableDate($date)) && !$this->isPreferredWorkday($date))
 							$date->addDay();
 						if ($isAvailable)
 							return true;
@@ -308,7 +370,7 @@
 		 */
 		private function isAvailableDate(Carbon $date): bool
 		{
-			return !in_array($date->format('Y-m-d'), $this->excludedDates, true) &&
+			return !in_array($date->toDateString(), $this->excludedDates, true) &&
 			       in_array($date->dayOfWeek, $this->standardWorkdays);
 		}
 		

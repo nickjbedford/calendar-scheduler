@@ -491,5 +491,20 @@
 			$this->assertEquals('2024-08-16', $schedule->closest('2024-09-14', '2024-08-15')->toDateString());
 			$this->assertEquals('2024-09-13', $schedule->closest('2024-09-14', '2024-08-16')->toDateString());
 			$this->assertEquals('2024-09-16', $schedule->closest('2024-09-14', '2024-09-14')->toDateString());
+			
+			$schedule = (new ScheduleDesigner())
+				->availableMondayToFriday()
+				->preferSpecificWeekdays([ Weekday::Tuesday, Weekday::Friday ])
+				->create();
+			
+			$this->assertEquals('2024-07-09', $schedule->closest('2024-07-11', '2024-07-01')->toDateString());
+			
+			$schedule = (new ScheduleDesigner())
+				->availableMondayToFriday()
+				->preferSpecificWeekdays([ Weekday::Tuesday, Weekday::Friday ])
+				->excludeDate('2024-07-09')
+				->create();
+			
+			$this->assertEquals('2024-07-08', $schedule->closest('2024-07-11', '2024-07-01')->toDateString());
 		}
 	}

@@ -3,7 +3,6 @@
 	
 	use Carbon\Carbon;
 	use Carbon\CarbonInterface;
-	use Carbon\Exceptions\InvalidFormatException;
 	use DateTimeInterface;
 	use Exception;
 	
@@ -52,6 +51,9 @@
 		/** @var string[] The public holidays to exclude from the schedule (formatted 'YYYY-MM-DD'). */
 		public readonly array $excludedDates;
 		
+		/** @var Weekday[]|null The preferred working days every week. */
+		public readonly ?array $preferredWorkdays;
+		
 		/**
 		 * Creates a new schedule finder.
 		 * @param Weekday[] $standardWorkdays The standard work days every week in the schedule.
@@ -63,12 +65,13 @@
 		 */
 		public function __construct(
 			public readonly array    $standardWorkdays = Weekday::MondayToFriday,
-			public readonly ?array   $preferredWorkdays = null,
+			?array                   $preferredWorkdays = null,
 			public readonly ?array   $preferredCalendar = null,
 			?array                   $excludedDates = null,
 			public ScheduleAlgorithm $algorithm = ScheduleAlgorithm::Default)
 		{
 			$this->excludedDates = $excludedDates ?? self::$defaultExcludedHolidays;
+			$this->preferredWorkdays = !empty($preferredWorkdays) ? $preferredWorkdays : null;
 			
 			if (empty($this->standardWorkdays))
 				throw new Exception('At least one standard workday must be specified.');
@@ -231,8 +234,8 @@
 		 * to function.
 		 * @param string|int|Carbon|DateTimeInterface|null $latestDate Optional. The latest date to allow to be selected.
 		 *  If the date is after this date, null is returned.
-		 * @return Carbon
-		 * @throws InvalidFormatException|Exception
+		 * @return string|null
+		 * @throws Exception
 		 */
 		public function nextAsString(
 			string|int|Carbon|DateTimeInterface|null $from = null,

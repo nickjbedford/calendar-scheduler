@@ -173,9 +173,31 @@
 			return $date;
 		}
 		
+		/**
+		 * Finds the closest schedule date to the reference date (preferring earlier dates).
+		 * This may return to an earlier preferred calendar date if the reference date is not
+		 * a preferred date, then it will attempt to return to a preferred workday earlier
+		 * than the reference date but not before the $earliestDate. Otherwise, it will
+		 * move to the next preferred calendar or workday.
+		 * @param string|int|Carbon|DateTimeInterface|null $from The reference date to calculate from (inclusive).
+		 * @param string|int|Carbon|DateTimeInterface|null $earliestDate Optional. The earliest date to allow to be selected.
+		 * This may be before the reference date, allowing {@see ScheduleAlgorithm::ClosestPreferredThenClosestStandardWorkday}
+		 * to function.
+		 * @return Carbon
+		 * @throws InvalidFormatException|Exception
+		 */
+		public function closest(
+			string|int|Carbon|DateTimeInterface|null $from = null,
+			string|int|Carbon|DateTimeInterface|null $earliestDate = null): Carbon
+		{
+			return $this->next($this->findClosestPreferredDate($from, $earliestDate), $earliestDate);
+		}
 		
 		/**
-		 * Finds the next scheduled date based on the reference date, returning the date as a string ("Y-m-d" format).
+		 * Finds the next scheduled date based on the reference date, returning the date
+		 * as a string ("Y-m-d" format). This will not return to an earlier preferred
+		 * calendar date if the reference date is not a preferred date, however it may
+		 * return to a preferred workday earlier than the reference date but not before the $earliestDate.
 		 *
 		 * @param string|int|Carbon|DateTimeInterface|null $from The reference date to calculate from (inclusive).
 		 * @param string|int|Carbon|DateTimeInterface|null $earliestDate Optional. The earliest date to allow to be selected.
@@ -192,7 +214,9 @@
 		}
 		
 		/**
-		 * Finds the next scheduled date based on the reference date.
+		 * Finds the next scheduled date based on the reference date. This will not return to an earlier preferred
+		 * calendar date if the reference date is not a preferred date, however it may return to a preferred workday
+		 * earlier than the reference date but not before the $earliestDate.
 		 *
 		 * @param string|int|Carbon|DateTimeInterface|null $from The reference date to calculate from (inclusive).
 		 * @param string|int|Carbon|DateTimeInterface|null $earliestDate Optional. The earliest date to allow to be selected.

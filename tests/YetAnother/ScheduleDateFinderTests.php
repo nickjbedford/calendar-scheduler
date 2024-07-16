@@ -462,4 +462,34 @@
 			foreach($dates as $date)
 				$this->assertEquals($expected, $schedule->findClosestPreferredDate($date, $notBefore)->toDateString(), $date);
 		}
+		
+		/**
+		 * @throws Exception
+		 */
+		function testFindClosestAvailableDate()
+		{
+			$designer = (new ScheduleDesigner())
+				->preferCalendarDaysInSpecificMonths([15])
+				->preferSpecificWeekdays(Weekday::MondayWednesdayFriday)
+				->availableMondayToFriday()
+				->findingClosestPreferredThenClosestStandardWorkday();
+			
+			$schedule = $designer->create();
+			
+			$this->assertEquals('2024-07-15', $schedule->closest('2024-07-18', '2024-07-01')->toDateString());
+			$this->assertEquals('2024-07-15', $schedule->closest('2024-08-14', '2024-07-01')->toDateString());
+			$this->assertEquals('2024-08-15', $schedule->closest('2024-08-14', '2024-07-16')->toDateString());
+			$this->assertEquals('2024-08-15', $schedule->closest('2024-09-14', '2024-07-16')->toDateString());
+			
+			$designer->excludeDate('2024-08-15');
+			$schedule = $designer->create();
+			
+			$this->assertEquals('2024-07-15', $schedule->closest('2024-07-18', '2024-07-01')->toDateString());
+			$this->assertEquals('2024-07-15', $schedule->closest('2024-08-14', '2024-07-01')->toDateString());
+			$this->assertEquals('2024-08-14', $schedule->closest('2024-08-14', '2024-07-16')->toDateString());
+			$this->assertEquals('2024-08-14', $schedule->closest('2024-09-14', '2024-07-16')->toDateString());
+			$this->assertEquals('2024-08-16', $schedule->closest('2024-09-14', '2024-08-15')->toDateString());
+			$this->assertEquals('2024-09-13', $schedule->closest('2024-09-14', '2024-08-16')->toDateString());
+			$this->assertEquals('2024-09-16', $schedule->closest('2024-09-14', '2024-09-14')->toDateString());
+		}
 	}

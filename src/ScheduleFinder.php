@@ -71,16 +71,11 @@
 			public ScheduleAlgorithm $algorithm = ScheduleAlgorithm::Default)
 		{
 			$this->excludedDates = $excludedDates ?? self::$defaultExcludedHolidays;
+			$preferredWorkdays = !empty($preferredWorkdays) ? array_intersect($preferredWorkdays, $this->standardWorkdays) : null;
 			$this->preferredWorkdays = !empty($preferredWorkdays) ? $preferredWorkdays : null;
 			
 			if (empty($this->standardWorkdays))
 				throw new Exception('At least one standard workday must be specified.');
-			
-			foreach($this->preferredWorkdays ?? [] as $day)
-			{
-				if (!in_array($day, $this->standardWorkdays, true))
-					throw new Exception('The preferred workdays must be a subset of the standard workdays.');
-			}
 			
 			if ($this->preferredCalendar)
 			{
